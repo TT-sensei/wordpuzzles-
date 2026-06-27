@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ことばさがしメーカー</title>
+
+<style>
+:root{
+    --bg:#eef3f9;
+    --panel-bg:#ffffff;
+    --accent:#3b82f6;
+    --accent-dark:#2563eb;
+    --text:#1f2937;
+    --border:#d7dee8;
+    --radius:14px;
+}
+
+*{ box-sizing:border-box; }
+
+body{
+    font-family:"Hiragino Maru Gothic ProN","Yu Gothic",sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    margin:0;
+    padding:0;
+}
+
+.app{
+    max-width:1180px;
+    margin:0 auto;
+    padding:20px 20px 60px;
+}
+
+header{
+    text-align:center;
+    margin-bottom:6px;
+}
+
+h1#title{
+    display:inline-block;
+    min-width:200px;
+    font-size:32px;
+    margin:10px auto 2px;
+    padding:4px 14px;
+    border-radius:10px;
+    outline:none;
+}
+
+h1#title:focus{
+    background:#fff;
+    box-shadow:0 0 0 2px var(--accent);
+}
+
+.answer-mark{ display:none; color:#dc2626; }
+
+.subtitle{
+    margin:0 0 14px;
+    font-size:13px;
+    color:#6b7280;
+}
+
+.layout{
+    display:flex;
+    gap:22px;
+    align-items:flex-start;
+}
+
+.panel{
+    width:280px;
+    flex:0 0 280px;
+    background:var(--panel-bg);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:18px;
+    position:sticky;
+    top:16px;
+}
+
+.field{ margin-bottom:14px; }
+
+.field label{
+    display:block;
+    font-size:13px;
+    font-weight:bold;
+    color:#475569;
+    margin-bottom:6px;
+}
+
+textarea, select{
+    width:100%;
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:8px 10px;
+    font-size:14px;
+    font-family:inherit;
+    background:#f8fafc;
+    resize:vertical;
+}
+
+textarea{ line-height:1.6; }
+
+button{
+    width:100%;
+    margin:6px 0;
+    padding:11px 14px;
+    font-size:15px;
+    font-weight:bold;
+    border:none;
+    border-radius:10px;
+    background:#e2e8f0;
+    color:var(--text);
+    cursor:pointer;
+    transition:transform .05s ease, background .15s ease;
+}
+button:hover{ background:#cbd5e1; }
+button:active{ transform:scale(0.98); }
+
+button.primary{
+    background:var(--accent);
+    color:#fff;
+}
+button.primary:hover{ background:var(--accent-dark); }
+
+button.ghost{
+    background:transparent;
+    border:1px solid var(--border);
+}
+
+.divider{
+    border-top:1px dashed var(--border);
+    margin:14px 0;
+}
+
+.hint{
+    font-size:12px;
+    color:#94a3b8;
+    margin-top:10px;
+    line-height:1.5;
+}
+
+.board{
+    flex:1;
+    min-width:0;
+    text-align:center;
+}
+
+.status{
+    min-height:22px;
+    font-weight:bold;
+    color:#16a34a;
+    margin-bottom:8px;
+}
+
+.warn{ color:#d97706; }
+
+.grid-wrap{
+    display:flex;
+    justify-content:center;
+}
+
+.grid{
+    display:grid;
+    gap:4px;
+    user-select:none;
+    margin:0 auto 18px;
+}
+
+.cell{
+    background:white;
+    border:2px solid #ccc;
+    font-size:var(--cell-font,22px);
+    font-weight:bold;
+    aspect-ratio:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:7px;
+    cursor:pointer;
+}
+
+.cell.selected{
+    background:#60a5fa;
+    color:white;
+    border-color:#3b82f6;
+}
+
+.cell.found{
+    background:var(--cell-color,#34d399);
+    color:#1f2937;
+    border-color:#94a3b8;
+}
+
+.cell.wrong{
+    background:#fecaca !important;
+    border-color:#f87171 !important;
+}
+
+.words{
+    margin-top:6px;
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:10px;
+}
+
+.word{
+    border:2px solid #cbd5e1;
+    padding:6px 12px;
+    border-radius:10px;
+    font-size:15px;
+    background:#fff;
+}
+
+.word .dot{
+    display:inline-block;
+    width:10px;
+    height:10px;
+    border-radius:50%;
+    margin-right:6px;
+    vertical-align:middle;
+}
+
+.word.done{
+    border-color:#94a3b8;
+    background:var(--cell-color,#34d399);
+}
+
+.print-only{ display:none; }
+
+.print-header-row{
+    display:flex;
+    justify-content:center;
+    gap:24px;
+    font-size:14px;
+    margin-bottom:14px;
+    color:#374151;
+}
+
+footer.note{
+    text-align:center;
+    font-size:12px;
+    color:#94a3b8;
+    margin-top:30px;
+}
+
+@media print{
+    body{ background:#fff; }
+    .app{ max-width:100%; padding:6px 14px; }
+    .no-print{ display:none !important; }
+    .print-only{ display:block; }
+    .layout{ display:block; }
+    .panel{ display:none !important; }
+    h1#title{ box-shadow:none !important; background:none !important; }
+
+    body.print-answer .answer-mark{ display:inline; }
+    body.print-answer .quiz-only{ display:none !important; }
+
+    .cell{
+        background:#fff !important;
+        color:#1f2937 !important;
+        border-color:#999 !important;
+    }
+    body.print-answer .cell[data-placed="1"]{
+        background:var(--cell-color) !important;
+        border-color:#555 !important;
+    }
+    .word{
+        background:#fff !important;
+        color:#1f2937 !important;
+        border-color:#999 !important;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<header>
+    <h1 id="title" contenteditable="true" spellcheck="false">くるまのなまえ</h1><span class="answer-mark">　（こたえ）</span>
+    <p class="subtitle no-print">タイトルはクリックして書きかえられます／マウスでドラッグして単語をさがそう</p>
+</header>
+
+<div class="print-only quiz-only print-header-row">
+    <span>年　組（　　）</span>
+    <span>名前：＿＿＿＿＿＿＿＿＿＿＿＿＿＿</span>
+</div>
+
+<div class="layout">
+
+    <aside class="panel no-print">
+        <div class="field">
+            <label>単語リスト（１行に１つ）</label>
+            <textarea id="wordInput" rows="9">ぷりうす
+あくあ
+せれな
+のあ
+ぼくしー
+やりす</textarea>
+        </div>
+
+        <div class="field">
+            <label>むずかしさ</label>
+            <select id="levelSelect">
+                <option value="easy">かんたん（よこ・たて）</option>
+                <option value="normal" selected>ふつう（よこ・たて・ななめ）</option>
+                <option value="hard">むずかしい（ぎゃくむきもあり）</option>
+            </select>
+        </div>
+
+        <div class="field">
+            <label>マスの大きさ</label>
+            <select id="sizeSelect">
+                <option value="auto" selected>自動</option>
+                <option value="8">8 × 8</option>
+                <option value="10">10 × 10</option>
+                <option value="12">12 × 12</option>
+                <option value="15">15 × 15</option>
+            </select>
+        </div>
+
+        <button id="generateBtn" class="primary">✏️ 作成する</button>
+
+        <div class="divider"></div>
+
+        <button id="printQuizBtn">🖨️ 問題用紙を印刷</button>
+        <button id="printAnswerBtn">🖨️ 解答用紙を印刷</button>
+
+        <div class="divider"></div>
+
+        <button id="resetBtn" class="ghost">選択をリセット</button>
+
+        <p class="hint">※「自動」は単語の数や長さからマスの大きさを決めます。<br>※印刷は問題用紙と解答用紙を別々に出力します。</p>
+    </aside>
+
+    <main class="board">
+        <p id="status" class="status"></p>
+        <div class="grid-wrap">
+            <div class="grid" id="grid"></div>
+        </div>
+        <div class="words" id="words"></div>
+    </main>
+
+</div>
+
+<footer class="note no-print">作成したパズルはブラウザに自動で保存されます。GitHub Pages 等で公開すれば、いつでもこのページで新しいワードサーチが作れます。</footer>
+
+</div>
+
+<script>
+/* ===================== 設定 ===================== */
+
+const LEVELS = {
+    easy:   [[1,0],[0,1]],
+    normal: [[1,0],[0,1],[1,1],[1,-1]],
+    hard:   [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1]]
+};
+
+const HIRA_POOL = "あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんがぎぐげござじずぜぞだぢづでどばびぶべぼぱぴぷぺぽ";
+const KATA_POOL = "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲンガギグゲゴザジズゼゾダヂヅデドバビブベボパピプペポ";
+
+const PALETTE = ["#fecaca","#fde68a","#bbf7d0","#a5f3fc","#c7d2fe","#fbcfe8","#fed7aa","#d9f99d","#e9d5ff","#99f6e4"];
+
+const STORAGE_KEY = "wordsearch_maker_v1";
+
+/* ===================== 状態 ===================== */
+
+let gridData = [];       // gridData[y][x] = もじ
+let gridSize = 10;
+let orderedWords = [];   // 実際に配置できた単語（入力順）
+let placedCellMap = {};  // "x,y" -> 色
+let placedSet = new Set();
+let foundSet = new Set();
+
+let isDragging = false;
+let startCell = null;
+let previewCells = [];
+
+/* ===================== 要素 ===================== */
+
+const titleEl = document.getElementById("title");
+const wordInputEl = document.getElementById("wordInput");
+const levelSelectEl = document.getElementById("levelSelect");
+const sizeSelectEl = document.getElementById("sizeSelect");
+const gridEl = document.getElementById("grid");
+const wordsEl = document.getElementById("words");
+const statusEl = document.getElementById("status");
+
+/* ===================== 単語パズル生成 ===================== */
+
+function makeEmptyGrid(size){
+    const g = [];
+    for(let y=0;y<size;y++){
+        g.push(new Array(size).fill(""));
+    }
+    return g;
+}
+
+function tryPlaceWord(grid, word, dirs, size){
+    const chars = Array.from(word);
+    const len = chars.length;
+    if(len === 0 || len > size) return null;
+
+    for(let t=0; t<300; t++){
+        const [dx,dy] = dirs[Math.floor(Math.random()*dirs.length)];
+        const startX = Math.floor(Math.random()*size);
+        const startY = Math.floor(Math.random()*size);
+        const endX = startX + dx*(len-1);
+        const endY = startY + dy*(len-1);
+        if(endX<0 || endX>=size || endY<0 || endY>=size) continue;
+
+        let fits = true;
+        for(let i=0;i<len;i++){
+            const x = startX+dx*i, y = startY+dy*i;
+            const cur = grid[y][x];
+            if(cur !== "" && cur !== chars[i]){ fits = false; break; }
+        }
+        if(!fits) continue;
+
+        const cells = [];
+        for(let i=0;i<len;i++){
+            const x = startX+dx*i, y = startY+dy*i;
+            grid[y][x] = chars[i];
+            cells.push({x,y});
+        }
+        return {word, cells};
+    }
+    return null;
+}
+
+function buildPuzzle(words, dirs, requestedSize){
+    const sorted = [...words].sort((a,b)=> Array.from(b).length - Array.from(a).length);
+    let size = requestedSize;
+    let best = null;
+
+    for(let outer=0; outer<40; outer++){
+        const grid = makeEmptyGrid(size);
+        const placements = [];
+        let ok = true;
+
+        for(const word of sorted){
+            const placed = tryPlaceWord(grid, word, dirs, size);
+            if(placed){ placements.push(placed); }
+            else{ ok = false; }
+        }
+
+        if(ok){ best = {grid, size, placements}; break; }
+        if(outer % 4 === 3 && size < 20) size++;
+    }
+
+    if(!best){
+        // 最後の手段：今までで一番大きいマスでベストエフォート配置
+        const grid = makeEmptyGrid(size);
+        const placements = [];
+        for(const word of sorted){
+            const placed = tryPlaceWord(grid, word, dirs, size);
+            if(placed) placements.push(placed);
+        }
+        best = {grid, size, placements};
+    }
+
+    return best;
+}
+
+function fillRemaining(grid, size, pool){
+    for(let y=0;y<size;y++){
+        for(let x=0;x<size;x++){
+            if(grid[y][x] === ""){
+                grid[y][x] = pool[Math.floor(Math.random()*pool.length)];
+            }
+        }
+    }
+}
+
+function pickFillPool(words){
+    const allKatakana = words.every(w => /^[\u30A0-\u30FFー]+$/.test(w));
+    return allKatakana ? KATA_POOL : HIRA_POOL;
+}
+
+/* ===================== 生成メイン処理 ===================== */
+
+function readWords(){
+    const lines = wordInputEl.value.split(/\n/).map(s=>s.trim()).filter(Boolean);
+    const seen = new Set();
+    const out = [];
+    for(const w of lines){
+        if(!seen.has(w)){ seen.add(w); out.push(w); }
+    }
+    return out;
+}
+
+function resolveSize(words, sizeOption){
+    if(sizeOption !== "auto") return parseInt(sizeOption, 10);
+    const longest = Math.max(...words.map(w=>Array.from(w).length), 4);
+    const totalLetters = words.reduce((a,w)=>a+Array.from(w).length, 0);
+    let auto = Math.max(8, longest+2, Math.ceil(Math.sqrt(totalLetters*2.2)));
+    return Math.min(auto, 16);
+}
+
+function generatePuzzle(){
+    const words = readWords();
+    if(words.length === 0){
+        statusEl.textContent = "⚠ 単語を1つ以上入力してください";
+        statusEl.classList.add("warn");
+        return;
+    }
+
+    const level = levelSelectEl.value;
+    const dirs = LEVELS[level];
+    const size = resolveSize(words, sizeSelectEl.value);
+
+    const result = buildPuzzle(words, dirs, size);
+    const fillPool = pickFillPool(words);
+    fillRemaining(result.grid, result.size, fillPool);
+
+    gridData = result.grid;
+    gridSize = result.size;
+
+    // 入力順に並べ直す（配置できた単語のみ）
+    orderedWords = words
+        .map(w => result.placements.find(p => p.word === w))
+        .filter(Boolean);
+
+    const unplaced = words.filter(w => !orderedWords.some(p => p.word === w));
+
+    placedCellMap = {};
+    placedSet = new Set();
+    orderedWords.forEach((p, i)=>{
+        const color = PALETTE[i % PALETTE.length];
+        p.cells.forEach(c=>{
+            const key = c.x+","+c.y;
+            if(!placedCellMap[key]) placedCellMap[key] = color;
+            placedSet.add(key);
+        });
+    });
+
+    foundSet = new Set();
+    renderGrid();
+    renderWords();
+    updateStatus();
+
+    if(unplaced.length > 0){
+        statusEl.textContent = "⚠ 配置できなかった単語: " + unplaced.join("、") + "（マスを大きくしてください）";
+        statusEl.classList.add("warn");
+    }
+
+    saveSettings();
+}
+
+/* ===================== 描画 ===================== */
+
+function renderGrid(){
+    gridEl.innerHTML = "";
+    gridEl.dataset.size = gridSize;
+    gridEl.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+    gridEl.style.maxWidth = Math.min(620, gridSize*44) + "px";
+    const fontPx = Math.max(13, Math.min(26, Math.round(380/gridSize)));
+    gridEl.style.setProperty("--cell-font", fontPx+"px");
+
+    for(let y=0;y<gridSize;y++){
+        for(let x=0;x<gridSize;x++){
+            const div = document.createElement("div");
+            div.className = "cell";
+            div.textContent = gridData[y][x];
+            div.dataset.x = x;
+            div.dataset.y = y;
+
+            const key = x+","+y;
+            if(placedSet.has(key)){
+                div.dataset.placed = "1";
+                div.style.setProperty("--cell-color", placedCellMap[key]);
+            }
+
+            div.addEventListener("mousedown", onCellDown);
+            div.addEventListener("touchstart", onCellTouchStart, {passive:false});
+
+            gridEl.appendChild(div);
+        }
+    }
+}
+
+function renderWords(){
+    wordsEl.innerHTML = "";
+    orderedWords.forEach((p, i)=>{
+        const w = document.createElement("div");
+        w.className = "word";
+        w.dataset.word = p.word;
+        const dot = document.createElement("span");
+        dot.className = "dot";
+        dot.style.background = PALETTE[i % PALETTE.length];
+        w.appendChild(dot);
+        w.appendChild(document.createTextNode(p.word));
+        wordsEl.appendChild(w);
+    });
+}
+
+function updateStatus(){
+    if(orderedWords.length === 0) return;
+    if(foundSet.size === orderedWords.length){
+        statusEl.textContent = "🎉 ぜんぶ みつけました！";
+    } else {
+        statusEl.textContent = `みつけた数：${foundSet.size} / ${orderedWords.length}`;
+    }
+    statusEl.classList.remove("warn");
+}
+
+/* ===================== マウス／タッチ選択 ===================== */
+
+function cellAt(x,y){
+    return gridEl.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
+}
+
+function clearPreview(){
+    previewCells.forEach(c=>{
+        const el = cellAt(c.x,c.y);
+        if(el) el.classList.remove("selected");
+    });
+    previewCells = [];
+}
+
+function getLine(x1,y1,x2,y2){
+    const dx = x2-x1, dy = y2-y1;
+    const adx = Math.abs(dx), ady = Math.abs(dy);
+    if(!(dx===0 || dy===0 || adx===ady)) return null;
+    const steps = Math.max(adx,ady);
+    const ux = steps===0 ? 0 : dx/steps;
+    const uy = steps===0 ? 0 : dy/steps;
+    const cells = [];
+    for(let i=0;i<=steps;i++){
+        cells.push({x:x1+ux*i, y:y1+uy*i});
+    }
+    return cells;
+}
+
+function startSelect(x,y){
+    isDragging = true;
+    startCell = {x,y};
+    clearPreview();
+    const line = getLine(x,y,x,y);
+    previewCells = line;
+    const el = cellAt(x,y);
+    if(el) el.classList.add("selected");
+}
+
+function moveSelect(x,y){
+    if(!isDragging) return;
+    const line = getLine(startCell.x, startCell.y, x, y);
+    if(!line) return;
+    clearPreview();
+    previewCells = line;
+    line.forEach(c=>{
+        const el = cellAt(c.x,c.y);
+        if(el) el.classList.add("selected");
+    });
+}
+
+function endSelect(){
+    if(!isDragging) return;
+    isDragging = false;
+
+    if(previewCells.length > 1){
+        const letters = previewCells.map(c=>gridData[c.y][c.x]).join("");
+        const reversed = Array.from(letters).reverse().join("");
+
+        const match = orderedWords.find(p => !foundSet.has(p.word) && (p.word === letters || p.word === reversed));
+
+        if(match){
+            foundSet.add(match.word);
+            const idx = orderedWords.indexOf(match);
+            const color = PALETTE[idx % PALETTE.length];
+            previewCells.forEach(c=>{
+                const el = cellAt(c.x,c.y);
+                if(el){
+                    el.classList.remove("selected");
+                    el.classList.add("found");
+                    el.style.setProperty("--cell-color", color);
+                }
+            });
+            const wordEl = wordsEl.querySelector(`.word[data-word="${CSS.escape(match.word)}"]`);
+            if(wordEl){
+                wordEl.classList.add("done");
+                wordEl.style.setProperty("--cell-color", color);
+            }
+            previewCells = [];
+            updateStatus();
+        } else {
+            previewCells.forEach(c=>{
+                const el = cellAt(c.x,c.y);
+                if(el){ el.classList.remove("selected"); el.classList.add("wrong"); }
+            });
+            setTimeout(()=>{
+                previewCells.forEach(c=>{
+                    const el = cellAt(c.x,c.y);
+                    if(el) el.classList.remove("wrong");
+                });
+            }, 250);
+            previewCells = [];
+        }
+    } else {
+        clearPreview();
+    }
+}
+
+function onCellDown(e){
+    e.preventDefault();
+    startSelect(+this.dataset.x, +this.dataset.y);
+}
+
+function onCellTouchStart(e){
+    e.preventDefault();
+    startSelect(+this.dataset.x, +this.dataset.y);
+}
+
+document.addEventListener("mousemove", e=>{
+    if(!isDragging) return;
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    if(el && el.classList.contains("cell")){
+        moveSelect(+el.dataset.x, +el.dataset.y);
+    }
+});
+
+document.addEventListener("touchmove", e=>{
+    if(!isDragging) return;
+    e.preventDefault();
+    const t = e.touches[0];
+    const el = document.elementFromPoint(t.clientX, t.clientY);
+    if(el && el.classList.contains("cell")){
+        moveSelect(+el.dataset.x, +el.dataset.y);
+    }
+}, {passive:false});
+
+document.addEventListener("mouseup", endSelect);
+document.addEventListener("touchend", endSelect);
+window.addEventListener("blur", ()=>{ isDragging = false; clearPreview(); });
+
+/* ===================== リセット／印刷 ===================== */
+
+function resetSelection(){
+    foundSet = new Set();
+    document.querySelectorAll(".cell").forEach(c=>{
+        c.classList.remove("selected","found","wrong");
+    });
+    document.querySelectorAll(".word").forEach(w=>{
+        w.classList.remove("done");
+    });
+    updateStatus();
+}
+
+function printSheet(mode){
+    document.body.classList.remove("print-quiz","print-answer");
+    document.body.classList.add(mode === "answer" ? "print-answer" : "print-quiz");
+    window.print();
+}
+
+window.addEventListener("afterprint", ()=>{
+    document.body.classList.remove("print-quiz","print-answer");
+});
+
+/* ===================== 保存・読み込み ===================== */
+
+function saveSettings(){
+    try{
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+            title: titleEl.textContent,
+            words: wordInputEl.value,
+            level: levelSelectEl.value,
+            size: sizeSelectEl.value
+        }));
+    }catch(e){}
+}
+
+function loadSettings(){
+    try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if(!raw) return;
+        const data = JSON.parse(raw);
+        if(data.title) titleEl.textContent = data.title;
+        if(data.words) wordInputEl.value = data.words;
+        if(data.level) levelSelectEl.value = data.level;
+        if(data.size) sizeSelectEl.value = data.size;
+    }catch(e){}
+}
+
+/* ===================== 初期化 ===================== */
+
+document.getElementById("generateBtn").addEventListener("click", generatePuzzle);
+document.getElementById("printQuizBtn").addEventListener("click", ()=>printSheet("quiz"));
+document.getElementById("printAnswerBtn").addEventListener("click", ()=>printSheet("answer"));
+document.getElementById("resetBtn").addEventListener("click", resetSelection);
+
+titleEl.addEventListener("keydown", e=>{
+    if(e.key === "Enter"){ e.preventDefault(); titleEl.blur(); }
+});
+titleEl.addEventListener("input", saveSettings);
+wordInputEl.addEventListener("input", saveSettings);
+levelSelectEl.addEventListener("change", saveSettings);
+sizeSelectEl.addEventListener("change", saveSettings);
+
+loadSettings();
+generatePuzzle();
+</script>
+
+</body>
+</html>
